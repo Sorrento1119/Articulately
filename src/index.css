@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-pixel-square: 'GeistPixelSquare', monospace, sans-serif;
+  --font-pixel-triangle: 'GeistPixelTriangle', monospace, sans-serif;
+  --font-pixel-grid: 'GeistPixelGrid', monospace, sans-serif;
+  --font-pixel-circle: 'GeistPixelCircle', monospace, sans-serif;
+  --font-pixel-line: 'GeistPixelLine', monospace, sans-serif;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+}
+
+@font-face {
+  font-family: 'GeistPixelSquare';
+  src: url('/fonts/GeistPixel-Square.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GeistPixelTriangle';
+  src: url('/fonts/GeistPixel-Triangle.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GeistPixelGrid';
+  src: url('/fonts/GeistPixel-Grid.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GeistPixelCircle';
+  src: url('/fonts/GeistPixel-Circle.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GeistPixelLine';
+  src: url('/fonts/GeistPixel-Line.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Explicit pixel font utility classes & hover states */
+.font-pixel-square {
+  font-family: 'GeistPixelSquare', monospace, sans-serif;
+}
+
+.font-pixel-triangle {
+  font-family: 'GeistPixelTriangle', monospace, sans-serif;
+}
+
+.font-pixel-grid {
+  font-family: 'GeistPixelGrid', monospace, sans-serif;
+}
+
+.font-pixel-circle {
+  font-family: 'GeistPixelCircle', monospace, sans-serif;
+}
+
+.font-pixel-line {
+  font-family: 'GeistPixelLine', monospace, sans-serif;
+}
+
+.hover\:font-pixel-triangle:hover {
+  font-family: 'GeistPixelTriangle', monospace, sans-serif;
+}
+
+.hover\:font-pixel-square:hover {
+  font-family: 'GeistPixelSquare', monospace, sans-serif;
+}
+
+.hover\:font-pixel-grid:hover {
+  font-family: 'GeistPixelGrid', monospace, sans-serif;
+}
+
+.hover\:font-pixel-circle:hover {
+  font-family: 'GeistPixelCircle', monospace, sans-serif;
+}
+
+.hover\:font-pixel-line:hover {
+  font-family: 'GeistPixelLine', monospace, sans-serif;
+}
+
+

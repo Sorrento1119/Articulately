@@ -1,0 +1,6 @@
+{
+  "name": "Articulately",
+  "description": "Gives you random speech topics to practice your speaking abilities, become articulate, and build confidence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
