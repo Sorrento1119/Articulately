@@ -1,0 +1,17 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Explicitly mark font binaries as binary to prevent git line ending conversion corruption
+*.woff2 binary
+*.woff binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.mp3 binary
+*.wav binary

@@ -68,10 +68,17 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
   useEffect(() => {
     if (isRunning) {
       endTimeRef.current = Date.now() + msLeftRef.current;
+      let lastRenderedMs = msLeftRef.current;
 
       const tick = () => {
-        const remaining = Math.max(0, endTimeRef.current - Date.now());
-        setMsLeft(remaining);
+        const now = Date.now();
+        const remaining = Math.max(0, endTimeRef.current - now);
+
+        // Throttle state updates to ~30fps (every ~33ms) or when finished to prevent main-thread layout thrashing
+        if (Math.abs(lastRenderedMs - remaining) >= 32 || remaining <= 0) {
+          lastRenderedMs = remaining;
+          setMsLeft(remaining);
+        }
 
         if (remaining <= 0) {
           handleStageCompletion();

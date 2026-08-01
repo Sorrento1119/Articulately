@@ -2,18 +2,44 @@
 
 let audioCtx: AudioContext | null = null;
 let isMuted: boolean = false;
+let userInteracted: boolean = false;
+
+// Attach global user gesture listener to safely unlock Web Audio API on first interaction
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    userInteracted = true;
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+  };
+
+  const events = ['click', 'keydown', 'touchstart', 'pointerdown'];
+  events.forEach((evt) => {
+    window.addEventListener(evt, unlockAudio, { capture: true, passive: true, once: false });
+  });
+}
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
+
+  // Do not attempt to initialize or resume AudioContext without prior user gesture
+  if (!userInteracted && !audioCtx) return null;
+
   if (!audioCtx) {
     const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (AudioCtxClass) {
       audioCtx = new AudioCtxClass();
     }
   }
+
   if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
+    if (userInteracted) {
+      audioCtx.resume().catch(() => {});
+    } else {
+      return null;
+    }
   }
+
   return audioCtx;
 }
 
