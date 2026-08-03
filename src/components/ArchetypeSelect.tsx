@@ -1,18 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, Sparkles } from 'lucide-react';
+import { ChevronDown, Sparkles, BookOpen } from 'lucide-react';
 import { ALL_ARCHETYPES, JACK_OF_ALL_TRADES_ID, Archetype } from '../topics';
 import { TextureButton } from './TextureButton';
 
 interface ArchetypeSelectProps {
   selectedArchetypeId: string;
   onSelectArchetype: (archetypeId: string) => void;
+  onOpenLibrary?: () => void;
   disabled?: boolean;
 }
 
 export function ArchetypeSelect({
   selectedArchetypeId,
   onSelectArchetype,
+  onOpenLibrary,
   disabled = false,
 }: ArchetypeSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -108,6 +110,29 @@ export function ArchetypeSelect({
                 </button>
               );
             })}
+
+            {onOpenLibrary && (
+              <>
+                <div className="my-1 border-t border-white/10" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    onOpenLibrary();
+                  }}
+                  className="w-full flex items-center gap-3 p-2 rounded-xl text-left transition-all cursor-pointer text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 border border-transparent"
+                >
+                  <span className="p-1.5 rounded-lg flex-shrink-0 bg-amber-400/20 border border-amber-400/30 text-amber-300">
+                    <BookOpen className="w-4 h-4" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold text-xs sm:text-sm tracking-wide truncate block">
+                      Browse Topic Library...
+                    </span>
+                  </div>
+                </button>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

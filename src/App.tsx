@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { RotateCw, Copy, Check, Play, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
+import { RotateCw, Copy, Check, Play, SlidersHorizontal, Volume2, VolumeX, BookOpen } from 'lucide-react';
 import { Typewriter } from './components/Typewriter';
 import { MeshGradientBg } from './components/MeshGradientBg';
 import { ArchetypeSelect } from './components/ArchetypeSelect';
 import { TimerSettingsModal } from './components/TimerSettingsModal';
+import { TopicLibraryModal, QueuedTopic } from './components/TopicLibraryModal';
 import { FullScreenTimer } from './components/FullScreenTimer';
 import { TextureButton } from './components/TextureButton';
 import { getMuted, setMuted, unlockAudio } from './utils/sound';
@@ -35,10 +36,30 @@ export default function App() {
   const [speakSeconds, setSpeakSeconds] = useState<number>(0);
   const [showKeybindings, setShowKeybindings] = useState<boolean>(false);
 
-  // Active Timer view state and Settings modal state
+  // Active Timer view state, Settings modal state, and Discrete Topic Library state
   const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
   const [isTimerSettingsOpen, setIsTimerSettingsOpen] = useState<boolean>(false);
+  const [isTopicLibraryOpen, setIsTopicLibraryOpen] = useState<boolean>(false);
+  const [isDiscreteModeEnabled, setIsDiscreteModeEnabled] = useState<boolean>(false);
+  const [queuedTopic, setQueuedTopic] = useState<QueuedTopic | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isAudioMuted, setIsAudioMuted] = useState<boolean>(getMuted());
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((current) => (current === msg ? null : current));
+    }, 2500);
+  };
+
+  const handleSetQueuedTopic = (queued: QueuedTopic | null) => {
+    setQueuedTopic(queued);
+    if (queued) {
+      showToast('Topic queued for next spin');
+    } else {
+      showToast('Topic queue cleared');
+    }
+  };
 
   const toggleAudioMute = () => {
     const nextMute = !isAudioMuted;
@@ -54,21 +75,39 @@ export default function App() {
     setCopied(false);
   };
 
+  // Handle manual topic selection from Topic Library
+  const handleSelectTopic = (topic: string, archetypeId?: string) => {
+    setCurrentTopic(topic);
+    if (archetypeId && archetypeId !== selectedArchetypeId) {
+      setSelectedArchetypeId(archetypeId);
+    }
+    setCopied(false);
+  };
+
   // Handle spin button click
   const handleSpin = useCallback(() => {
     if (isSpinning) return;
     setIsSpinning(true);
     setRotationDegree((prev) => prev + 360);
 
-    // Pick random topic from currently selected archetype
-    const newTopic = getRandomTopicForArchetype(selectedArchetypeId, currentTopic);
+    let newTopic: string;
+    if (queuedTopic) {
+      newTopic = queuedTopic.topic;
+      if (queuedTopic.archetypeId && queuedTopic.archetypeId !== selectedArchetypeId) {
+        setSelectedArchetypeId(queuedTopic.archetypeId);
+      }
+      setQueuedTopic(null); // Consume the queued topic
+    } else {
+      // Pick random topic from currently selected archetype
+      newTopic = getRandomTopicForArchetype(selectedArchetypeId, currentTopic);
+    }
 
     setTimeout(() => {
       setCurrentTopic(newTopic);
       setIsSpinning(false);
       setCopied(false);
     }, 300);
-  }, [isSpinning, selectedArchetypeId, currentTopic]);
+  }, [isSpinning, queuedTopic, selectedArchetypeId, currentTopic]);
 
   // Handle start timer click - if on default message, assign a topic first
   const handleStartTimer = useCallback(() => {
@@ -80,10 +119,28 @@ export default function App() {
   }, [currentTopic, selectedArchetypeId]);
 
   // Global Keyboard Shortcuts for Topic Selection Page:
+  // Ctrl+M = Toggle Discrete Topic Library
   // Space = Spin, Enter = Start Timer
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isTimerActive || isTimerSettingsOpen) return;
+      // Toggle discrete topic library mode with Ctrl+M / Cmd+M
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'm' || e.key === 'M' || e.code === 'KeyM')) {
+        e.preventDefault();
+        setIsDiscreteModeEnabled((prev) => {
+          const next = !prev;
+          if (next) {
+            setIsTopicLibraryOpen(true);
+            showToast('Discrete Topic Library Unlocked');
+          } else {
+            setIsTopicLibraryOpen(false);
+            showToast('Discrete Mode Deactivated');
+          }
+          return next;
+        });
+        return;
+      }
+
+      if (isTimerActive || isTimerSettingsOpen || isTopicLibraryOpen) return;
 
       const target = e.target as HTMLElement | null;
       if (
@@ -115,7 +172,7 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isTimerActive, isTimerSettingsOpen, handleSpin, handleStartTimer]);
+  }, [isTimerActive, isTimerSettingsOpen, isTopicLibraryOpen, handleSpin, handleStartTimer]);
 
   const handleCopy = () => {
     if (!currentTopic || currentTopic === DEFAULT_TOPIC_MESSAGE) return;
@@ -154,6 +211,21 @@ export default function App() {
       {/* Mesh Gradient Background */}
       <MeshGradientBg />
 
+      {/* Discrete Mode Toast Feedback */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-4 z-50 px-4 py-2 rounded-full bg-slate-900/95 border border-amber-500/50 text-amber-300 font-semibold text-xs shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-md flex items-center gap-2 pointer-events-none"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Radial vignetting overlay for crisp contrast and depth */}
       <div className="absolute inset-0 bg-radial from-transparent via-slate-950/20 to-slate-950/75 pointer-events-none" />
 
@@ -182,7 +254,7 @@ export default function App() {
           </TextureButton>
         </motion.div>
 
-        {/* Archetype Selection Dropdown & Timer Settings Button */}
+        {/* Archetype Selection Dropdown & Action Controls */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -194,12 +266,26 @@ export default function App() {
             <ArchetypeSelect
               selectedArchetypeId={selectedArchetypeId}
               onSelectArchetype={handleSelectArchetype}
+              onOpenLibrary={isDiscreteModeEnabled ? () => setIsTopicLibraryOpen(true) : undefined}
               disabled={isSpinning}
             />
           </div>
 
-          {/* Action buttons (Timer Settings & Sound Toggle) */}
+          {/* Action buttons (Topic Library if enabled, Timer Settings & Sound Toggle) */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {isDiscreteModeEnabled && (
+              <TextureButton
+                variant="neutral"
+                size="md"
+                onClick={() => setIsTopicLibraryOpen(true)}
+                aria-label="Topic Library"
+                title="Browse & Select Topics Manually [Ctrl+M]"
+                className="!px-2.5 sm:!px-3.5 !py-2.5 sm:!py-3 flex items-center justify-center flex-shrink-0 border-amber-500/40 bg-amber-500/10"
+              >
+                <BookOpen className="w-4 h-4 text-amber-300" />
+              </TextureButton>
+            )}
+
             <TextureButton
               variant="neutral"
               size="md"
@@ -302,27 +388,42 @@ export default function App() {
             </TextureButton>
           </div>
 
-          {/* Quick Action: Copy Topic */}
-          <TextureButton
-            variant="neutral"
-            size="sm"
-            onClick={handleCopy}
-            disabled={currentTopic === DEFAULT_TOPIC_MESSAGE}
-            className="rounded-2xl !px-3.5 !py-1.5"
-            title={currentTopic === DEFAULT_TOPIC_MESSAGE ? 'Spin to get a topic first' : 'Copy topic to clipboard'}
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-300 font-medium text-xs">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span className="text-xs">Copy topic</span>
-              </>
+          {/* Quick Actions: Browse Library (when Ctrl+M activated) & Copy Topic */}
+          <div className="flex items-center gap-2">
+            {isDiscreteModeEnabled && (
+              <TextureButton
+                variant="neutral"
+                size="sm"
+                onClick={() => setIsTopicLibraryOpen(true)}
+                className="rounded-2xl !px-3.5 !py-1.5 border-amber-500/40 bg-amber-500/10"
+                title="Browse all topics in library and select manually"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-amber-300" />
+                <span className="text-xs">Browse library</span>
+              </TextureButton>
             )}
-          </TextureButton>
+
+            <TextureButton
+              variant="neutral"
+              size="sm"
+              onClick={handleCopy}
+              disabled={currentTopic === DEFAULT_TOPIC_MESSAGE}
+              className="rounded-2xl !px-3.5 !py-1.5"
+              title={currentTopic === DEFAULT_TOPIC_MESSAGE ? 'Spin to get a topic first' : 'Copy topic to clipboard'}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-300 font-medium text-xs">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span className="text-xs">Copy topic</span>
+                </>
+              )}
+            </TextureButton>
+          </div>
         </motion.div>
       </main>
 
@@ -336,6 +437,17 @@ export default function App() {
         speakSeconds={speakSeconds}
         showKeybindings={showKeybindings}
         onSave={handleSaveTimerSettings}
+      />
+
+      {/* Topic Library Modal */}
+      <TopicLibraryModal
+        isOpen={isTopicLibraryOpen}
+        onClose={() => setIsTopicLibraryOpen(false)}
+        currentTopic={currentTopic}
+        selectedArchetypeId={selectedArchetypeId}
+        queuedTopic={queuedTopic}
+        onSelectTopic={handleSelectTopic}
+        onSetQueuedTopic={handleSetQueuedTopic}
       />
 
       {/* Huge Full Screen Timer Overlay */}
