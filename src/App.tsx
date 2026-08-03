@@ -158,10 +158,10 @@ export default function App() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="flex-1 flex items-center justify-center my-auto px-2 sm:px-4 py-2 sm:py-4 max-w-full w-full overflow-visible"
         >
-          <h1 className={`${getFontSizeClass(currentTopic)} font-pixel-square hover:font-pixel-triangle transition-all duration-150 tracking-normal text-white drop-shadow-xl leading-snug max-w-full overflow-visible py-2 px-1 text-center cursor-default`}>
+          <h1 className={`${getFontSizeClass(currentTopic)} font-pixel tracking-normal text-white drop-shadow-xl leading-snug max-w-full overflow-visible py-2 px-1 text-center cursor-default`}>
             <Typewriter
               text={currentTopic}
-              className="font-pixel-square hover:font-pixel-triangle"
+              className="font-pixel"
               speed={45}
               delay={0.05}
             />

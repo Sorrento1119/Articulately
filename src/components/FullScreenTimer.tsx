@@ -208,7 +208,7 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
 
       {/* Centered Topic Header with Circular Copy Icon */}
       <div className="relative z-10 w-full max-w-3xl mx-auto flex items-center justify-center gap-2 px-3 py-2 my-auto">
-        <h2 className="font-pixel-square hover:font-pixel-triangle transition-all duration-150 text-white/95 text-2xl sm:text-3xl md:text-4xl text-center leading-snug break-words max-w-[85vw] drop-shadow-md">
+        <h2 className="font-pixel text-white/95 text-2xl sm:text-3xl md:text-4xl text-center leading-snug break-words max-w-[85vw] drop-shadow-md">
           {topic}
         </h2>
         <TextureButton
@@ -267,7 +267,7 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center justify-center text-center p-4 sm:p-8"
           >
-            <h1 className="font-pixel-square hover:font-pixel-triangle transition-all duration-150 text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white drop-shadow-[0_10px_35px_rgba(255,255,255,0.2)] uppercase">
+            <h1 className="font-pixel text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-white drop-shadow-[0_10px_35px_rgba(255,255,255,0.2)] uppercase">
               session completed
             </h1>
           </motion.div>
