@@ -108,7 +108,7 @@ function safePlay(soundFn: (ctx: AudioContext) => void) {
 }
 
 /**
- * Play a crisp, gentle mechanical typewriter key click with synchronized light haptic tick.
+ * Play a crisp mechanical typewriter key click with synchronized tactile haptic tick.
  */
 export function playTypewriterClick() {
   triggerHaptic(6); // Light tactile micro-tick for keystrokes
@@ -117,7 +117,7 @@ export function playTypewriterClick() {
   safePlay((ctx) => {
     const now = ctx.currentTime;
 
-    // 1. Filtered noise burst for the key metallic/plastic impact
+    // 1. Filtered noise burst for key impact
     const bufferSize = Math.floor(ctx.sampleRate * 0.015); // 15ms
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -131,8 +131,7 @@ export function playTypewriterClick() {
     // Bandpass filter for realistic key sound
     const filter = ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    // Subtle random frequency shift per keystroke for natural feel
-    const baseFreq = 2800 + (Math.random() * 600 - 300);
+    const baseFreq = 2800 + (Math.random() * 400 - 200);
     filter.frequency.setValueAtTime(baseFreq, now);
     filter.Q.setValueAtTime(3.5, now);
 
@@ -147,7 +146,7 @@ export function playTypewriterClick() {
     noise.start(now);
     noise.stop(now + 0.015);
 
-    // 2. Subtle low body thud for mechanical depth
+    // 2. Low mechanical body thud
     const osc = ctx.createOscillator();
     const oscGain = ctx.createGain();
 

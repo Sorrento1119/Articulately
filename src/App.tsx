@@ -231,7 +231,7 @@ export default function App() {
             <Typewriter
               text={currentTopic}
               className="font-pixel"
-              speed={45}
+              speed={68}
               delay={0.05}
             />
           </h1>

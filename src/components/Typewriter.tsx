@@ -3,7 +3,7 @@ import { playTypewriterClick, playTopicRevealSound } from '../utils/sound';
 
 export interface TypewriterProps {
   text: string;
-  speed?: number; // Speed per character in ms
+  speed?: number; // Speed per character in ms (default 90ms for deliberate pace & anticipation)
   delay?: number; // Initial delay in seconds
   baseText?: string;
   className?: string;
@@ -12,7 +12,7 @@ export interface TypewriterProps {
 
 export function Typewriter({
   text,
-  speed = 60,
+  speed = 68,
   delay = 0,
   baseText = '',
   className = '',
@@ -41,28 +41,35 @@ export function Typewriter({
     if (!isStarted) return;
 
     if (displayedText.length < text.length) {
+      const nextIndex = displayedText.length;
+
       const timer = setTimeout(() => {
-        const nextChar = text[displayedText.length];
+        const nextChar = text[nextIndex];
         // Only play sound if character is not empty space
         if (nextChar && nextChar.trim() !== '') {
           playTypewriterClick();
         }
-        const nextText = text.substring(0, displayedText.length + 1);
+        const nextText = text.substring(0, nextIndex + 1);
         setDisplayedText(nextText);
         if (nextText.length === text.length) {
           playTopicRevealSound();
         }
       }, speed);
+
       return () => clearTimeout(timer);
     }
   }, [displayedText, text, isStarted, speed]);
+
+  const isComplete = displayedText.length === text.length;
 
   return (
     <span className={`inline text-center whitespace-normal break-words max-w-full ${className}`}>
       {baseText && <span className="mr-1 inline-block">{baseText}</span>}
       <span className="inline break-words">{displayedText}</span>
       <span
-        className={`inline-block w-[3px] sm:w-[5px] h-[0.8em] bg-white/90 ml-1.5 animate-pulse rounded-xs shadow-sm align-middle -translate-y-[0.05em] ${cursorClassName}`}
+        className={`inline-block w-[3px] sm:w-[5px] h-[0.8em] ${
+          isComplete ? 'bg-amber-300/80 shadow-[0_0_8px_rgba(252,211,77,0.5)]' : 'bg-white/90 shadow-sm'
+        } ml-1.5 animate-pulse rounded-xs align-middle -translate-y-[0.05em] ${cursorClassName}`}
       />
     </span>
   );
