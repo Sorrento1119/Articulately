@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RotateCw, Copy, Check, Play, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
 import { Typewriter } from './components/Typewriter';
@@ -33,6 +33,7 @@ export default function App() {
   const [prepSeconds, setPrepSeconds] = useState<number>(0);
   const [speakMinutes, setSpeakMinutes] = useState<number>(5);
   const [speakSeconds, setSpeakSeconds] = useState<number>(0);
+  const [showKeybindings, setShowKeybindings] = useState<boolean>(false);
 
   // Active Timer view state and Settings modal state
   const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
@@ -55,7 +56,7 @@ export default function App() {
   };
 
   // Handle spin button click
-  const handleSpin = () => {
+  const handleSpin = useCallback(() => {
     if (isSpinning) return;
     setIsSpinning(true);
     setRotationDegree((prev) => prev + 360);
@@ -68,7 +69,45 @@ export default function App() {
       setIsSpinning(false);
       setCopied(false);
     }, 300);
-  };
+  }, [isSpinning, selectedArchetypeId, currentTopic]);
+
+  // Global Keyboard Shortcuts for Topic Selection Page:
+  // Space = Spin, Enter = Start Timer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTimerActive || isTimerSettingsOpen) return;
+
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        handleSpin();
+      } else if (e.code === 'Enter' || e.key === 'Enter') {
+        e.preventDefault();
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        setIsTimerActive(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isTimerActive, isTimerSettingsOpen, handleSpin]);
 
   const handleCopy = () => {
     if (!currentTopic) return;
@@ -81,12 +120,14 @@ export default function App() {
     pMin: number,
     pSec: number,
     sMin: number,
-    sSec: number
+    sSec: number,
+    showKeys: boolean
   ) => {
     setPrepMinutes(pMin);
     setPrepSeconds(pSec);
     setSpeakMinutes(sMin);
     setSpeakSeconds(sSec);
+    setShowKeybindings(showKeys);
   };
 
   const getFontSizeClass = (text: string) => {
@@ -211,7 +252,7 @@ export default function App() {
               size="lg"
               onClick={handleSpin}
               disabled={isSpinning}
-              className="group min-w-[125px] sm:min-w-[160px]"
+              className="group min-w-[130px] sm:min-w-[170px]"
             >
               <motion.div
                 animate={{ rotate: rotationDegree }}
@@ -219,9 +260,16 @@ export default function App() {
               >
                 <RotateCw className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900 group-hover:text-amber-600 transition-colors" />
               </motion.div>
-              <span className="tracking-wider uppercase text-xs sm:text-sm font-extrabold">
-                spin
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="tracking-wider uppercase text-xs sm:text-sm font-extrabold">
+                  spin
+                </span>
+                {showKeybindings && (
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-slate-900/20 text-slate-700 uppercase border border-slate-900/30">
+                    Space
+                  </kbd>
+                )}
+              </div>
             </TextureButton>
 
             {/* Start Timer Session Button */}
@@ -230,12 +278,19 @@ export default function App() {
               variant="primary"
               size="lg"
               onClick={() => setIsTimerActive(true)}
-              className="group min-w-[125px] sm:min-w-[160px]"
+              className="group min-w-[130px] sm:min-w-[170px]"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
-              <span className="tracking-wider uppercase text-xs sm:text-sm font-extrabold">
-                start
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="tracking-wider uppercase text-xs sm:text-sm font-extrabold">
+                  start
+                </span>
+                {showKeybindings && (
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-amber-950/20 text-amber-950 uppercase border border-amber-950/30">
+                    Enter
+                  </kbd>
+                )}
+              </div>
             </TextureButton>
           </div>
 
@@ -270,6 +325,7 @@ export default function App() {
         prepSeconds={prepSeconds}
         speakMinutes={speakMinutes}
         speakSeconds={speakSeconds}
+        showKeybindings={showKeybindings}
         onSave={handleSaveTimerSettings}
       />
 
@@ -280,6 +336,7 @@ export default function App() {
             topic={currentTopic}
             prepDurationSeconds={prepTotalSeconds}
             speakDurationSeconds={speakTotalSeconds}
+            showKeybindings={showKeybindings}
             onClose={() => setIsTimerActive(false)}
           />
         )}

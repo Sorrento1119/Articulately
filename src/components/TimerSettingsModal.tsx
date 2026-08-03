@@ -10,7 +10,14 @@ interface TimerSettingsModalProps {
   prepSeconds: number;
   speakMinutes: number;
   speakSeconds: number;
-  onSave: (prepMin: number, prepSec: number, speakMin: number, speakSec: number) => void;
+  showKeybindings: boolean;
+  onSave: (
+    prepMin: number,
+    prepSec: number,
+    speakMin: number,
+    speakSec: number,
+    showKeybindings: boolean
+  ) => void;
 }
 
 export const TimerSettingsModal: React.FC<TimerSettingsModalProps> = ({
@@ -20,12 +27,14 @@ export const TimerSettingsModal: React.FC<TimerSettingsModalProps> = ({
   prepSeconds,
   speakMinutes,
   speakSeconds,
+  showKeybindings,
   onSave,
 }) => {
   const [pMin, setPMin] = React.useState(prepMinutes);
   const [pSec, setPSec] = React.useState(prepSeconds);
   const [sMin, setSMin] = React.useState(speakMinutes);
   const [sSec, setSSec] = React.useState(speakSeconds);
+  const [showKeys, setShowKeys] = React.useState(showKeybindings);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -33,8 +42,9 @@ export const TimerSettingsModal: React.FC<TimerSettingsModalProps> = ({
       setPSec(prepSeconds);
       setSMin(speakMinutes);
       setSSec(speakSeconds);
+      setShowKeys(showKeybindings);
     }
-  }, [isOpen, prepMinutes, prepSeconds, speakMinutes, speakSeconds]);
+  }, [isOpen, prepMinutes, prepSeconds, speakMinutes, speakSeconds, showKeybindings]);
 
   const handleSave = () => {
     const validPMin = Math.max(0, Math.min(120, pMin));
@@ -42,7 +52,7 @@ export const TimerSettingsModal: React.FC<TimerSettingsModalProps> = ({
     const validSMin = Math.max(0, Math.min(120, sMin));
     const validSSec = Math.max(0, Math.min(59, sSec));
 
-    onSave(validPMin, validPSec, validSMin, validSSec);
+    onSave(validPMin, validPSec, validSMin, validSSec, showKeys);
     onClose();
   };
 
@@ -202,6 +212,27 @@ export const TimerSettingsModal: React.FC<TimerSettingsModalProps> = ({
                     </TextureButton>
                   ))}
                 </div>
+              </div>
+
+              {/* Keyboard Shortcut Badges Option */}
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-amber-300 block">
+                    Show Keyboard Shortcut Labels
+                  </span>
+                  <span className="text-[11px] text-white/60 block">
+                    Display [Space] &amp; [Enter] badges on buttons
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={showKeys}
+                    onChange={(e) => setShowKeys(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                </label>
               </div>
             </div>
 

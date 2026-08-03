@@ -1,23 +1,107 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, Pause, CheckCircle2, RotateCcw, X, Clock, Sparkles, Copy, Check } from 'lucide-react';
 import { MeshGradientBg } from './MeshGradientBg';
 import { TextureButton } from './TextureButton';
-import { playTopicRevealSound, playButtonClick } from '../utils/sound';
+import { playWarningBeep, playTimerCompleteAlarm, unlockAudio } from '../utils/sound';
 
 interface FullScreenTimerProps {
   topic: string;
   prepDurationSeconds: number;
   speakDurationSeconds: number;
+  showKeybindings?: boolean;
   onClose: () => void;
 }
 
 type Stage = 'prep' | 'speak' | 'completed';
 
+// Worker constructor helper that creates an unthrottled background worker timer with fallback
+class BackgroundTimerWorker {
+  private worker: Worker | null = null;
+  private intervalId: number | null = null;
+  private onTickCallback: (remainingMs: number) => void;
+
+  constructor(onTick: (remainingMs: number) => void) {
+    this.onTickCallback = onTick;
+    try {
+      const code = `
+        let timerId = null;
+        let endTime = 0;
+
+        self.onmessage = function(e) {
+          const data = e.data;
+          if (data.action === 'start') {
+            if (timerId) clearInterval(timerId);
+            endTime = Date.now() + data.durationMs;
+            timerId = setInterval(function() {
+              const remaining = Math.max(0, endTime - Date.now());
+              self.postMessage({ type: 'tick', remainingMs: remaining });
+              if (remaining <= 0) {
+                clearInterval(timerId);
+                timerId = null;
+              }
+            }, 100);
+          } else if (data.action === 'stop') {
+            if (timerId) {
+              clearInterval(timerId);
+              timerId = null;
+            }
+          }
+        };
+      `;
+      const blob = new Blob([code], { type: 'application/javascript' });
+      this.worker = new Worker(URL.createObjectURL(blob));
+      this.worker.onmessage = (e) => {
+        if (e.data && e.data.type === 'tick') {
+          this.onTickCallback(e.data.remainingMs);
+        }
+      };
+    } catch {
+      this.worker = null;
+    }
+  }
+
+  start(durationMs: number) {
+    if (this.worker) {
+      this.worker.postMessage({ action: 'start', durationMs });
+    } else {
+      if (this.intervalId) clearInterval(this.intervalId);
+      const endTime = Date.now() + durationMs;
+      this.intervalId = window.setInterval(() => {
+        const remaining = Math.max(0, endTime - Date.now());
+        this.onTickCallback(remaining);
+        if (remaining <= 0) {
+          if (this.intervalId) clearInterval(this.intervalId);
+          this.intervalId = null;
+        }
+      }, 100);
+    }
+  }
+
+  stop() {
+    if (this.worker) {
+      this.worker.postMessage({ action: 'stop' });
+    }
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  terminate() {
+    this.stop();
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
+    }
+  }
+}
+
 export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
   topic,
   prepDurationSeconds,
   speakDurationSeconds,
+  showKeybindings = false,
   onClose,
 }) => {
   const initialStage: Stage = prepDurationSeconds > 0 ? 'prep' : 'speak';
@@ -31,13 +115,18 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
   // Keep track of original total milliseconds for progress calculation
   const totalMs = (stage === 'prep' ? prepDurationSeconds : speakDurationSeconds) * 1000;
 
-  const animFrameRef = useRef<number | null>(null);
-  const endTimeRef = useRef<number>(0);
+  const timerWorkerRef = useRef<BackgroundTimerWorker | null>(null);
   const msLeftRef = useRef<number>(msLeft);
+  const lastBeepSecondRef = useRef<number | null>(null);
+  const stageRef = useRef<Stage>(stage);
 
   useEffect(() => {
     msLeftRef.current = msLeft;
   }, [msLeft]);
+
+  useEffect(() => {
+    stageRef.current = stage;
+  }, [stage]);
 
   const handleCopy = () => {
     if (topic) {
@@ -47,53 +136,80 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
     }
   };
 
-  // Stage transition handling
-  const handleStageCompletion = () => {
+  // Stage completion handler
+  const handleStageCompletion = useCallback(() => {
     setIsRunning(false);
-    playTopicRevealSound();
-    if (stage === 'prep') {
-      // Transition prep -> speak (paused by default so user can manually start)
+    if (timerWorkerRef.current) {
+      timerWorkerRef.current.stop();
+    }
+    // Play the distinct, triumphant timer ending alarm sound
+    playTimerCompleteAlarm();
+
+    if (stageRef.current === 'prep') {
+      // Transition prep -> speak (paused by default so user can manually start speaking phase)
       const nextMs = speakDurationSeconds * 1000;
       setStage('speak');
       setMsLeft(nextMs);
       msLeftRef.current = nextMs;
-      endTimeRef.current = Date.now() + nextMs;
+      lastBeepSecondRef.current = null;
       setIsRunning(false);
-    } else if (stage === 'speak') {
+    } else if (stageRef.current === 'speak') {
       // Transition speak -> completed
       setStage('completed');
       setMsLeft(0);
       msLeftRef.current = 0;
+      lastBeepSecondRef.current = null;
     }
-  };
+  }, [speakDurationSeconds]);
 
-  // High-precision millisecond timer tick loop using requestAnimationFrame
+  // Tick handler passed to the worker
+  const handleTick = useCallback((remainingMs: number) => {
+    setMsLeft(remainingMs);
+    msLeftRef.current = remainingMs;
+
+    const currentCeilSec = Math.ceil(remainingMs / 1000);
+
+    if (remainingMs <= 0) {
+      if (timerWorkerRef.current) {
+        timerWorkerRef.current.stop();
+      }
+      handleStageCompletion();
+    } else if (currentCeilSec <= 5 && currentCeilSec >= 1) {
+      if (lastBeepSecondRef.current !== currentCeilSec) {
+        lastBeepSecondRef.current = currentCeilSec;
+        playWarningBeep(currentCeilSec);
+      }
+    }
+  }, [handleStageCompletion]);
+
+  // Handle timer worker lifecycle & background ticking
   useEffect(() => {
-    if (isRunning) {
-      endTimeRef.current = Date.now() + msLeftRef.current;
-
-      const tick = () => {
-        const remaining = Math.max(0, endTimeRef.current - Date.now());
-        setMsLeft(remaining);
-
-        if (remaining <= 0) {
-          handleStageCompletion();
-        } else {
-          animFrameRef.current = requestAnimationFrame(tick);
-        }
-      };
-
-      animFrameRef.current = requestAnimationFrame(tick);
-    } else if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
+    if (isRunning && msLeftRef.current > 0) {
+      unlockAudio();
+      if (!timerWorkerRef.current) {
+        timerWorkerRef.current = new BackgroundTimerWorker(handleTick);
+      }
+      timerWorkerRef.current.start(msLeftRef.current);
+    } else if (timerWorkerRef.current) {
+      timerWorkerRef.current.stop();
     }
 
     return () => {
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
+      if (timerWorkerRef.current) {
+        timerWorkerRef.current.stop();
       }
     };
-  }, [isRunning, stage, prepDurationSeconds, speakDurationSeconds]);
+  }, [isRunning, handleTick]);
+
+  // Clean up worker on unmount
+  useEffect(() => {
+    return () => {
+      if (timerWorkerRef.current) {
+        timerWorkerRef.current.terminate();
+        timerWorkerRef.current = null;
+      }
+    };
+  }, []);
 
   // Format milliseconds to MM:SS and MS (hundredths of a second)
   const formatTimeParts = (totalMilliseconds: number) => {
@@ -115,30 +231,96 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
     };
   };
 
-  const handleStartPause = () => {
-    setIsRunning((prev) => !prev);
-  };
+  // Update document title dynamically so timer is visible in browser tab bar during research
+  useEffect(() => {
+    const originalTitle = document.title;
 
-  const handleDone = () => {
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (stage === 'completed') {
+      document.title = `[COMPLETED] Articulately`;
+    } else {
+      const { mainTime } = formatTimeParts(msLeft);
+      const stageLabel = stage === 'prep' ? 'PREP' : 'SPEAK';
+      document.title = `(${mainTime}) [${stageLabel}] ${topic} - Articulately`;
+    }
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [msLeft, stage, topic]);
+
+  const handleStartPause = useCallback(() => {
+    unlockAudio();
+    setIsRunning((prev) => !prev);
+  }, []);
+
+  const handleDone = useCallback(() => {
+    if (timerWorkerRef.current) {
+      timerWorkerRef.current.stop();
+    }
     setIsRunning(false);
-    if (stage === 'prep') {
+    lastBeepSecondRef.current = null;
+
+    if (stageRef.current === 'prep') {
       const nextMs = speakDurationSeconds * 1000;
       setStage('speak');
       setMsLeft(nextMs);
       msLeftRef.current = nextMs;
-      endTimeRef.current = Date.now() + nextMs;
       setIsRunning(false);
-    } else if (stage === 'speak') {
+    } else if (stageRef.current === 'speak') {
       setStage('completed');
       setMsLeft(0);
       msLeftRef.current = 0;
     }
-  };
+  }, [speakDurationSeconds]);
+
+  // Keyboard Shortcuts in Timer Overlay:
+  // Space = Start / Pause
+  // Enter = Done (Next phase / finish)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        handleStartPause();
+      } else if (e.code === 'Enter' || e.key === 'Enter') {
+        e.preventDefault();
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        if (stageRef.current === 'completed') {
+          onClose();
+        } else {
+          handleDone();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleStartPause, handleDone, onClose]);
 
   const handleStartOver = () => {
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (timerWorkerRef.current) {
+      timerWorkerRef.current.stop();
+    }
     setIsRunning(false);
+    lastBeepSecondRef.current = null;
+
     if (stage === 'prep') {
       const initMs = prepDurationSeconds * 1000;
       setMsLeft(initMs);
@@ -292,18 +474,28 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
               variant={isRunning ? 'primary' : stage === 'prep' ? 'accent' : 'success'}
               size="lg"
               onClick={handleStartPause}
-              className="flex-1 max-w-[160px] sm:max-w-[200px]"
+              className="flex-1 max-w-[170px] sm:max-w-[210px]"
             >
               {isRunning ? (
-                <>
+                <div className="flex items-center gap-1.5">
                   <Pause className="w-5 h-5 fill-current" />
                   <span>Pause</span>
-                </>
+                  {showKeybindings && (
+                    <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-slate-900/20 text-slate-800 uppercase border border-slate-900/30">
+                      Space
+                    </kbd>
+                  )}
+                </div>
               ) : (
-                <>
+                <div className="flex items-center gap-1.5">
                   <Play className="w-5 h-5 fill-current" />
                   <span>Start</span>
-                </>
+                  {showKeybindings && (
+                    <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-slate-900/20 text-slate-800 uppercase border border-slate-900/30">
+                      Space
+                    </kbd>
+                  )}
+                </div>
               )}
             </TextureButton>
 
@@ -312,10 +504,17 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
               variant="neutral"
               size="lg"
               onClick={handleDone}
-              className="flex-1 max-w-[140px] sm:max-w-[180px]"
+              className="flex-1 max-w-[150px] sm:max-w-[190px]"
             >
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
-              <span>Done</span>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
+                <span>Done</span>
+                {showKeybindings && (
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-white/10 text-white/80 uppercase border border-white/20">
+                    Enter
+                  </kbd>
+                )}
+              </div>
             </TextureButton>
 
             {/* Start Over Button */}

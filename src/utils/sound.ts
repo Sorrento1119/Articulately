@@ -250,3 +250,78 @@ export function playTopicRevealSound() {
     });
   });
 }
+
+/**
+ * Play a warning beep during countdown (e.g. for the last 5 seconds: 5, 4, 3, 2, 1).
+ * Pitch rises on the final countdown second for emphasis.
+ */
+export function playWarningBeep(secondsLeft?: number) {
+  triggerHaptic(secondsLeft === 1 ? [15, 30, 20] : 10);
+
+  if (isMuted) return;
+
+  safePlay((ctx) => {
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    // Frequency: 880Hz for seconds 5..2, 1046.5Hz for second 1
+    const freq = secondsLeft === 1 ? 1046.5 : 880;
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+
+    // Fast, crisp attack and exponential decay for clean tick/beep
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.09);
+  });
+}
+
+/**
+ * Play a distinct, triumphant ending alarm sound when the timer phase completes.
+ * Different from the topic reveal sound, featuring a bright multi-burst completion alarm chime.
+ */
+export function playTimerCompleteAlarm() {
+  triggerHaptic([25, 40, 25, 40, 30, 60, 40]);
+
+  if (isMuted) return;
+
+  safePlay((ctx) => {
+    const now = ctx.currentTime;
+
+    // Multi-burst completion alarm sequence (distinct, pleasant, clear finish chime)
+    const bursts = [
+      { delay: 0, notes: [523.25, 659.25, 783.99, 1046.5] }, // C5, E5, G5, C6
+      { delay: 0.16, notes: [659.25, 783.99, 1046.5, 1318.51] }, // E5, G5, C6, E6
+      { delay: 0.32, notes: [1046.5, 1318.51, 1567.98] }, // C6, E6, G6
+    ];
+
+    bursts.forEach((burst) => {
+      const startTime = now + burst.delay;
+      burst.notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, startTime + idx * 0.035);
+
+        gain.gain.setValueAtTime(0, startTime + idx * 0.035);
+        gain.gain.linearRampToValueAtTime(0.1, startTime + idx * 0.035 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + idx * 0.035 + 0.3);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime + idx * 0.035);
+        osc.stop(startTime + idx * 0.035 + 0.32);
+      });
+    });
+  });
+}
