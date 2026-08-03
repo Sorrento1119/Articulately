@@ -14,11 +14,11 @@ import {
   getRandomTopicForArchetype,
 } from './topics';
 
+const DEFAULT_TOPIC_MESSAGE = 'Click Spin to Get Started';
+
 export default function App() {
   const [selectedArchetypeId, setSelectedArchetypeId] = useState<string>(JACK_OF_ALL_TRADES_ID);
-  const [currentTopic, setCurrentTopic] = useState<string>(() =>
-    getRandomTopicForArchetype(JACK_OF_ALL_TRADES_ID)
-  );
+  const [currentTopic, setCurrentTopic] = useState<string>(DEFAULT_TOPIC_MESSAGE);
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
   const [rotationDegree, setRotationDegree] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
@@ -49,9 +49,8 @@ export default function App() {
   // Handle archetype change from dropdown selector
   const handleSelectArchetype = (archetypeId: string) => {
     setSelectedArchetypeId(archetypeId);
-    // When archetype changes, immediately update to a topic from that archetype
-    const nextTopic = getRandomTopicForArchetype(archetypeId, currentTopic);
-    setCurrentTopic(nextTopic);
+    // When archetype changes, show default message instead of immediately assigning a topic
+    setCurrentTopic(DEFAULT_TOPIC_MESSAGE);
     setCopied(false);
   };
 
@@ -70,6 +69,15 @@ export default function App() {
       setCopied(false);
     }, 300);
   }, [isSpinning, selectedArchetypeId, currentTopic]);
+
+  // Handle start timer click - if on default message, assign a topic first
+  const handleStartTimer = useCallback(() => {
+    if (currentTopic === DEFAULT_TOPIC_MESSAGE) {
+      const topicToAssign = getRandomTopicForArchetype(selectedArchetypeId);
+      setCurrentTopic(topicToAssign);
+    }
+    setIsTimerActive(true);
+  }, [currentTopic, selectedArchetypeId]);
 
   // Global Keyboard Shortcuts for Topic Selection Page:
   // Space = Spin, Enter = Start Timer
@@ -99,7 +107,7 @@ export default function App() {
         if (document.activeElement instanceof HTMLElement) {
           document.activeElement.blur();
         }
-        setIsTimerActive(true);
+        handleStartTimer();
       }
     };
 
@@ -107,10 +115,10 @@ export default function App() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isTimerActive, isTimerSettingsOpen, handleSpin]);
+  }, [isTimerActive, isTimerSettingsOpen, handleSpin, handleStartTimer]);
 
   const handleCopy = () => {
-    if (!currentTopic) return;
+    if (!currentTopic || currentTopic === DEFAULT_TOPIC_MESSAGE) return;
     navigator.clipboard.writeText(currentTopic);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -277,7 +285,7 @@ export default function App() {
               id="start-button"
               variant="primary"
               size="lg"
-              onClick={() => setIsTimerActive(true)}
+              onClick={handleStartTimer}
               className="group min-w-[130px] sm:min-w-[170px]"
             >
               <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
@@ -299,8 +307,9 @@ export default function App() {
             variant="neutral"
             size="sm"
             onClick={handleCopy}
+            disabled={currentTopic === DEFAULT_TOPIC_MESSAGE}
             className="rounded-2xl !px-3.5 !py-1.5"
-            title="Copy topic to clipboard"
+            title={currentTopic === DEFAULT_TOPIC_MESSAGE ? 'Spin to get a topic first' : 'Copy topic to clipboard'}
           >
             {copied ? (
               <>
