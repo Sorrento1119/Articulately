@@ -2,6 +2,7 @@
 
 let audioCtx: AudioContext | null = null;
 let isMuted: boolean = false;
+let isUnlocked: boolean = false;
 
 /**
  * Trigger subtle haptic vibration feedback on supported devices
@@ -24,10 +25,51 @@ function getAudioContext(): AudioContext | null {
       audioCtx = new AudioCtxClass();
     }
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume().catch(() => {});
-  }
   return audioCtx;
+}
+
+function playSilentWarmup(ctx: AudioContext) {
+  try {
+    const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start(0);
+  } catch {
+    // Ignore warmup errors
+  }
+}
+
+/**
+ * Proactively unlock and resume AudioContext on user interaction
+ */
+export function unlockAudio() {
+  if (typeof window === 'undefined') return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
+      if (ctx.state === 'running' && !isUnlocked) {
+        isUnlocked = true;
+        playSilentWarmup(ctx);
+      }
+    }).catch(() => {});
+  } else if (ctx.state === 'running' && !isUnlocked) {
+    isUnlocked = true;
+    playSilentWarmup(ctx);
+  }
+}
+
+// Auto-attach global gesture unlock listeners so the very first tap/click/keydown anywhere unlocks audio context
+if (typeof window !== 'undefined') {
+  const unlockEvents = ['pointerdown', 'touchstart', 'mousedown', 'keydown', 'click'];
+  const handleUserInteraction = () => {
+    unlockAudio();
+  };
+  unlockEvents.forEach((evt) => {
+    window.addEventListener(evt, handleUserInteraction, { capture: true, passive: true });
+  });
 }
 
 export function setMuted(muted: boolean) {
@@ -39,19 +81,44 @@ export function getMuted(): boolean {
 }
 
 /**
+ * Helper to run sound generation safely once AudioContext is running
+ */
+function safePlay(soundFn: (ctx: AudioContext) => void) {
+  if (isMuted) return;
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
+      if (ctx.state === 'running') {
+        try {
+          soundFn(ctx);
+        } catch {
+          // Ignore audio node errors
+        }
+      }
+    }).catch(() => {});
+  } else if (ctx.state === 'running') {
+    try {
+      soundFn(ctx);
+    } catch {
+      // Ignore audio node errors
+    }
+  }
+}
+
+/**
  * Play a crisp, gentle mechanical typewriter key click with synchronized light haptic tick.
  */
 export function playTypewriterClick() {
   triggerHaptic(6); // Light tactile micro-tick for keystrokes
   if (isMuted) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
 
-  try {
+  safePlay((ctx) => {
     const now = ctx.currentTime;
 
     // 1. Filtered noise burst for the key metallic/plastic impact
-    const bufferSize = ctx.sampleRate * 0.015; // 15ms
+    const bufferSize = Math.floor(ctx.sampleRate * 0.015); // 15ms
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -96,9 +163,7 @@ export function playTypewriterClick() {
 
     osc.start(now);
     osc.stop(now + 0.02);
-  } catch {
-    // Ignore audio context errors gracefully
-  }
+  });
 }
 
 /**
@@ -114,10 +179,8 @@ export function playButtonClick(variant: 'primary' | 'secondary' | 'neutral' | '
   }
 
   if (isMuted) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
 
-  try {
+  safePlay((ctx) => {
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -153,9 +216,7 @@ export function playButtonClick(variant: 'primary' | 'secondary' | 'neutral' | '
 
     osc.start(now);
     osc.stop(now + 0.05);
-  } catch {
-    // Ignore audio context errors
-  }
+  });
 }
 
 /**
@@ -165,10 +226,8 @@ export function playTopicRevealSound() {
   triggerHaptic([10, 30, 15, 30, 20, 40, 25]);
 
   if (isMuted) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
 
-  try {
+  safePlay((ctx) => {
     const now = ctx.currentTime;
     const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 arpeggio
 
@@ -189,7 +248,5 @@ export function playTopicRevealSound() {
       osc.start(now + idx * 0.04);
       osc.stop(now + idx * 0.04 + 0.2);
     });
-  } catch {
-    // Ignore
-  }
+  });
 }

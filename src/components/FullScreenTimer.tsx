@@ -172,29 +172,35 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
 
       {/* Top Header Bar */}
       <div className="relative z-10 w-full max-w-5xl flex items-center justify-between pt-2 sm:pt-4 px-1 sm:px-4">
-        {/* Stage Badge */}
-        <div className="flex items-center justify-start sm:justify-center flex-1 min-w-0">
+        {/* Invisible left spacer balancing the close button so the center chip stays centered */}
+        <div className="w-8 sm:w-10 flex-shrink-0 pointer-events-none opacity-0" aria-hidden="true">
+          <div className="w-8 h-8 sm:w-10 sm:h-10" />
+        </div>
+
+        {/* Stage Badge - Centered, compact, single line */}
+        <div className="flex items-center justify-center flex-1 min-w-0 px-1">
           {stage === 'prep' && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg truncate">
-              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="truncate">Preparation Phase</span>
+            <span className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
+              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Preparation Phase</span>
             </span>
           )}
           {stage === 'speak' && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg truncate">
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="truncate">Speaking Phase</span>
+            <span className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
+              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Speaking Phase</span>
             </span>
           )}
           {stage === 'completed' && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg truncate">
-              <span className="truncate">Session Completed</span>
+            <span className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
+              <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Session Completed</span>
             </span>
           )}
         </div>
 
         {/* Right Close Button */}
-        <div className="flex justify-end flex-shrink-0 ml-2">
+        <div className="flex justify-end flex-shrink-0">
           <TextureButton
             variant="icon"
             onClick={onClose}
@@ -206,27 +212,27 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
         </div>
       </div>
 
-      {/* Centered Topic Header with Circular Copy Icon */}
-      <div className="relative z-10 w-full max-w-3xl mx-auto flex items-center justify-center gap-2 px-3 py-2 my-auto">
-        <h2 className="font-pixel text-white/95 text-2xl sm:text-3xl md:text-4xl text-center leading-snug break-words max-w-[85vw] drop-shadow-md">
-          {topic}
-        </h2>
-        <TextureButton
-          variant="icon"
-          onClick={handleCopy}
-          title="Copy topic"
-          className="flex-shrink-0 !p-2 sm:!p-2.5 rounded-2xl"
-        >
-          {copied ? (
-            <Check className="w-4 h-4 text-emerald-400" />
-          ) : (
-            <Copy className="w-4 h-4 text-white/80" />
-          )}
-        </TextureButton>
-      </div>
+      {/* Main Central Display Area (Topic + Huge Timer / Completion Text) */}
+      <div className="relative z-10 flex-1 my-auto flex flex-col items-center justify-center w-full max-w-5xl px-2 min-h-0 gap-3 sm:gap-6">
+        {/* Centered Topic Header with Circular Copy Icon */}
+        <div className="w-full max-w-3xl mx-auto flex items-center justify-center gap-2 px-3">
+          <h2 className="font-pixel text-white/95 text-xl sm:text-3xl md:text-4xl text-center leading-snug break-words max-w-[85vw] drop-shadow-md">
+            {topic}
+          </h2>
+          <TextureButton
+            variant="icon"
+            onClick={handleCopy}
+            title="Copy topic"
+            className="flex-shrink-0 !p-2 sm:!p-2.5 rounded-2xl"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Copy className="w-4 h-4 text-white/80" />
+            )}
+          </TextureButton>
+        </div>
 
-      {/* Main Central Display Area (Huge Timer or Huge Completion Text) */}
-      <div className="relative z-10 my-auto flex flex-col items-center justify-center w-full max-w-5xl px-2">
         {stage !== 'completed' ? (
           <div className="flex flex-col items-center justify-center w-full">
             {/* Massive Monospaced Timer Digits */}
@@ -238,7 +244,7 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
               className="relative font-mono font-extrabold tracking-tighter text-center leading-none select-none drop-shadow-[0_10px_35px_rgba(0,0,0,0.8)]"
             >
               <div
-                className={`inline-flex items-baseline justify-center text-[15vw] sm:text-[18vw] md:text-[20vw] lg:text-[14rem] ${
+                className={`inline-flex items-baseline justify-center text-[22vw] sm:text-[18vw] md:text-[20vw] lg:text-[14rem] ${
                   stage === 'prep'
                     ? 'text-amber-300 drop-shadow-[0_0_40px_rgba(245,158,11,0.25)]'
                     : 'text-emerald-300 drop-shadow-[0_0_40px_rgba(16,185,129,0.25)]'

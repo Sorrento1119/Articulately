@@ -1,5 +1,5 @@
 import React from 'react';
-import { playButtonClick } from '../utils/sound';
+import { playButtonClick, unlockAudio } from '../utils/sound';
 
 export interface TextureButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'accent' | 'secondary' | 'neutral' | 'outline' | 'destructive' | 'success' | 'icon';
@@ -25,6 +25,7 @@ export const TextureButton = React.forwardRef<HTMLButtonElement, TextureButtonPr
     ref
   ) => {
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      unlockAudio();
       if (!disabled && playSound) {
         playButtonClick(
           variant === 'primary' || variant === 'accent'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { RotateCw, Copy, Check, Play, SlidersHorizontal, Volume2, VolumeX } from 'lucide-react';
 import { Typewriter } from './components/Typewriter';
@@ -7,7 +7,7 @@ import { ArchetypeSelect } from './components/ArchetypeSelect';
 import { TimerSettingsModal } from './components/TimerSettingsModal';
 import { FullScreenTimer } from './components/FullScreenTimer';
 import { TextureButton } from './components/TextureButton';
-import { getMuted, setMuted } from './utils/sound';
+import { getMuted, setMuted, unlockAudio } from './utils/sound';
 import {
   ALL_ARCHETYPES,
   JACK_OF_ALL_TRADES_ID,
@@ -22,6 +22,11 @@ export default function App() {
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
   const [rotationDegree, setRotationDegree] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
+
+  // Attempt early unlock of AudioContext on app mount
+  useEffect(() => {
+    unlockAudio();
+  }, []);
 
   // Timer Configuration State (Default 5 mins prep, 5 mins speak)
   const [prepMinutes, setPrepMinutes] = useState<number>(5);
@@ -89,7 +94,7 @@ export default function App() {
     if (len > 45) return 'text-xl sm:text-2xl md:text-3xl lg:text-4xl';
     if (len > 32) return 'text-2xl sm:text-3xl md:text-4xl lg:text-5xl';
     if (len > 20) return 'text-3xl sm:text-4xl md:text-5xl lg:text-6xl';
-    return 'text-4xl sm:text-6xl md:text-7xl lg:text-8xl';
+    return 'text-3xl sm:text-5xl md:text-6xl lg:text-7xl';
   };
 
   const prepTotalSeconds = prepMinutes * 60 + prepSeconds;
@@ -104,13 +109,36 @@ export default function App() {
       <div className="absolute inset-0 bg-radial from-transparent via-slate-950/20 to-slate-950/75 pointer-events-none" />
 
       {/* Main Content Container - Entirely fits in one page across resolutions */}
-      <main className="relative z-10 w-full max-w-4xl h-full flex flex-col items-center justify-between text-center py-2 sm:py-4 gap-3 sm:gap-6">
-        {/* Top: Archetype Selection Dropdown & Timer Settings Button */}
+      <main className="relative z-10 w-full max-w-4xl h-full flex flex-col items-center justify-between text-center py-1 sm:py-2 gap-1 sm:gap-2 overflow-hidden">
+        {/* Top Header Branding: Ultra-compact single line */}
         <motion.div
-          initial={{ opacity: 0, y: -15 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="pt-1 sm:pt-2 w-full flex items-center justify-between sm:justify-center gap-2 sm:gap-3"
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="pt-0.5 flex items-center justify-center gap-1.5 text-xs text-slate-300 font-medium flex-shrink-0"
+        >
+          <span className="font-pixel text-xs sm:text-sm text-white tracking-widest drop-shadow-sm cursor-default">
+            Articulately
+          </span>
+          <span className="text-white/40 text-[10px] sm:text-xs select-none">•</span>
+          <span className="text-[10px] sm:text-xs text-white/70">made by</span>
+          <TextureButton
+            variant="neutral"
+            size="sm"
+            onClick={() => window.open('https://www.tharv.in', '_blank', 'noopener,noreferrer')}
+            className="rounded-full !px-2.5 !py-0.5"
+            title="Visit tharv.in"
+          >
+            <span className="text-[10px] sm:text-xs font-bold text-amber-200">tharv</span>
+          </TextureButton>
+        </motion.div>
+
+        {/* Archetype Selection Dropdown & Timer Settings Button */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }}
+          className="w-full flex items-center justify-between sm:justify-center gap-2 sm:gap-3 flex-shrink-0"
         >
           {/* Archetype Dropdown - flexible on mobile, centered on desktop */}
           <div className="flex-1 min-w-0 sm:flex-initial">
@@ -156,7 +184,7 @@ export default function App() {
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex-1 flex items-center justify-center my-auto px-2 sm:px-4 py-2 sm:py-4 max-w-full w-full overflow-visible"
+          className="flex-1 min-h-0 flex items-center justify-center my-auto px-2 sm:px-4 py-2 max-w-full w-full overflow-visible"
         >
           <h1 className={`${getFontSizeClass(currentTopic)} font-pixel tracking-normal text-white drop-shadow-xl leading-snug max-w-full overflow-visible py-2 px-1 text-center cursor-default`}>
             <Typewriter
@@ -173,7 +201,7 @@ export default function App() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="pb-2 sm:pb-6 flex flex-col items-center justify-center gap-2.5 sm:gap-3.5"
+          className="pb-2 sm:pb-4 flex flex-col items-center justify-center gap-2.5 sm:gap-3.5 flex-shrink-0"
         >
           {/* Spin & Start Action Buttons */}
           <div className="flex items-center justify-center gap-2.5 sm:gap-4 w-full">
