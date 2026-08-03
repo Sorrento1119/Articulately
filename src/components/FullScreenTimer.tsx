@@ -68,17 +68,10 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
   useEffect(() => {
     if (isRunning) {
       endTimeRef.current = Date.now() + msLeftRef.current;
-      let lastRenderedMs = msLeftRef.current;
 
       const tick = () => {
-        const now = Date.now();
-        const remaining = Math.max(0, endTimeRef.current - now);
-
-        // Throttle state updates to ~30fps (every ~33ms) or when finished to prevent main-thread layout thrashing
-        if (Math.abs(lastRenderedMs - remaining) >= 32 || remaining <= 0) {
-          lastRenderedMs = remaining;
-          setMsLeft(remaining);
-        }
+        const remaining = Math.max(0, endTimeRef.current - Date.now());
+        setMsLeft(remaining);
 
         if (remaining <= 0) {
           handleStageCompletion();
@@ -178,53 +171,51 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
       <div className="absolute inset-0 bg-radial from-transparent via-slate-950/20 to-slate-950/75 pointer-events-none" />
 
       {/* Top Header Bar */}
-      <div className="relative z-10 w-full max-w-5xl grid grid-cols-3 items-center pt-2 sm:pt-4">
-        {/* Left Spacer for symmetry */}
-        <div />
-
-        {/* Stage Badge Centered */}
-        <div className="flex items-center justify-center">
+      <div className="relative z-10 w-full max-w-5xl flex items-center justify-between pt-2 sm:pt-4 px-1 sm:px-4">
+        {/* Stage Badge */}
+        <div className="flex items-center justify-start sm:justify-center flex-1 min-w-0">
           {stage === 'prep' && (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg">
-              <Clock className="w-4 h-4" />
-              Preparation Phase
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg truncate">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Preparation Phase</span>
             </span>
           )}
           {stage === 'speak' && (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg">
-              <Sparkles className="w-4 h-4" />
-              Speaking Phase
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg truncate">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">Speaking Phase</span>
             </span>
           )}
           {stage === 'completed' && (
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg">
-              Session Completed
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs sm:text-sm font-bold uppercase tracking-wider shadow-lg truncate">
+              <span className="truncate">Session Completed</span>
             </span>
           )}
         </div>
 
         {/* Right Close Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end flex-shrink-0 ml-2">
           <TextureButton
             variant="icon"
             onClick={onClose}
             title="Exit timer"
+            className="!p-2 sm:!p-2.5"
           >
-            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            <X className="w-5 h-5" />
           </TextureButton>
         </div>
       </div>
 
-      {/* Centered Topic Header with Circular Copy Icon (No border box for clean uncluttered look) */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto flex items-center justify-center gap-2 sm:gap-3 px-4 py-2 my-auto">
-        <h2 className="font-pixel-square hover:font-pixel-triangle transition-all duration-150 text-white/95 text-xl sm:text-3xl md:text-4xl lg:text-5xl text-center leading-snug truncate max-w-[80vw] drop-shadow-md">
+      {/* Centered Topic Header with Circular Copy Icon */}
+      <div className="relative z-10 w-full max-w-3xl mx-auto flex items-center justify-center gap-2 px-3 py-2 my-auto">
+        <h2 className="font-pixel-square hover:font-pixel-triangle transition-all duration-150 text-white/95 text-2xl sm:text-3xl md:text-4xl text-center leading-snug break-words max-w-[85vw] drop-shadow-md">
           {topic}
         </h2>
         <TextureButton
           variant="icon"
           onClick={handleCopy}
           title="Copy topic"
-          className="flex-shrink-0 !p-2.5 rounded-2xl"
+          className="flex-shrink-0 !p-2 sm:!p-2.5 rounded-2xl"
         >
           {copied ? (
             <Check className="w-4 h-4 text-emerald-400" />

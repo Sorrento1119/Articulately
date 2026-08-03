@@ -58,11 +58,11 @@ export function Typewriter({
   }, [displayedText, text, isStarted, speed]);
 
   return (
-    <span className={`inline-flex items-center justify-center whitespace-nowrap max-w-full overflow-visible py-2 px-1 ${className}`}>
+    <span className={`inline-flex items-center justify-center flex-wrap text-center whitespace-normal break-words max-w-full overflow-visible py-1 px-1 ${className}`}>
       {baseText && <span className="mr-1 flex-shrink-0">{baseText}</span>}
-      <span className="inline-block leading-normal">{displayedText}</span>
+      <span className="inline-block leading-snug text-center break-words">{displayedText}</span>
       <span
-        className={`inline-block flex-shrink-0 w-[2px] sm:w-[4px] h-[0.85em] bg-white/90 ml-1.5 sm:ml-2 animate-pulse rounded-xs shadow-sm align-middle ${cursorClassName}`}
+        className={`inline-block flex-shrink-0 w-[2px] sm:w-[4px] h-[0.85em] bg-white/90 ml-1 sm:ml-2 animate-pulse rounded-xs shadow-sm align-middle ${cursorClassName}`}
       />
     </span>
   );

@@ -40,21 +40,21 @@ interface MeshGradientBgProps {
   rotationY?: number;
 }
 
-export const MeshGradientBg = React.memo(function MeshGradientBg({
+export function MeshGradientBg({
   color1 = '#73bfc4',
   color2 = '#ff810a',
   color3 = '#8da0ce',
-  uSpeed = 0.25,
+  uSpeed = 0.3,
   rotationY = 130,
 }: MeshGradientBgProps) {
   const fallbackUI = (
-    <div className="absolute inset-0 bg-slate-950 overflow-hidden pointer-events-none">
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#73bfc4] rounded-full mix-blend-screen filter blur-[120px] opacity-40 animate-pulse" />
+    <div className="absolute inset-0 bg-slate-950 overflow-hidden">
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#73bfc4] rounded-full mix-blend-screen filter blur-[120px] opacity-50 animate-pulse" />
       <div
-        className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-[#ff810a] rounded-full mix-blend-screen filter blur-[140px] opacity-35 animate-spin"
-        style={{ animationDuration: '30s' }}
+        className="absolute top-1/3 right-1/4 w-[600px] h-[600px] bg-[#ff810a] rounded-full mix-blend-screen filter blur-[140px] opacity-40 animate-spin"
+        style={{ animationDuration: '25s' }}
       />
-      <div className="absolute bottom-1/4 left-1/3 w-[550px] h-[550px] bg-[#8da0ce] rounded-full mix-blend-screen filter blur-[130px] opacity-40 animate-pulse" />
+      <div className="absolute bottom-1/4 left-1/3 w-[550px] h-[550px] bg-[#8da0ce] rounded-full mix-blend-screen filter blur-[130px] opacity-50 animate-pulse" />
     </div>
   );
 
@@ -102,7 +102,7 @@ export const MeshGradientBg = React.memo(function MeshGradientBg({
             lightType="env"
             brightness={0.8}
             envPreset="city"
-            grain="off"
+            grain="on"
             toggleAxis={false}
             zoomOut={false}
             hoverState=""
@@ -112,4 +112,4 @@ export const MeshGradientBg = React.memo(function MeshGradientBg({
       </CanvasErrorBoundary>
     </div>
   );
-});
+}

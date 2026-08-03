@@ -33,7 +33,7 @@ export function ArchetypeSelect({
   const IconComponent = selectedArchetype.icon;
 
   return (
-    <div className="relative inline-block text-left z-30" ref={dropdownRef}>
+    <div className="relative w-full sm:w-auto inline-block text-left z-30" ref={dropdownRef}>
       {/* Dropdown Selector Button */}
       <TextureButton
         variant="neutral"
@@ -41,13 +41,13 @@ export function ArchetypeSelect({
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="justify-between min-w-[220px] sm:min-w-[280px]"
+        className="justify-between w-full min-w-0 sm:min-w-[240px] sm:w-[280px] !px-3 sm:!px-4"
       >
-        <div className="flex items-center gap-2.5 truncate">
+        <div className="flex items-center gap-2 truncate min-w-0">
           <span className="p-1 rounded-lg bg-amber-400/20 border border-amber-400/30 text-amber-300 flex-shrink-0">
             <IconComponent className="w-4 h-4" />
           </span>
-          <div className="flex flex-col text-left truncate">
+          <div className="flex flex-col text-left truncate min-w-0">
             <span className="truncate font-semibold tracking-wide text-xs sm:text-sm text-white">
               {selectedArchetype.name}
             </span>
@@ -55,7 +55,7 @@ export function ArchetypeSelect({
         </div>
 
         <ChevronDown
-          className={`w-4 h-4 text-white/70 transition-transform duration-200 flex-shrink-0 ml-2 ${
+          className={`w-4 h-4 text-white/70 transition-transform duration-200 flex-shrink-0 ml-1.5 ${
             isOpen ? 'rotate-180 text-white' : ''
           }`}
         />
@@ -69,7 +69,7 @@ export function ArchetypeSelect({
             animate={{ opacity: 1, y: 4, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute left-1/2 -translate-x-1/2 w-[280px] sm:w-[340px] max-h-[320px] sm:max-h-[380px] overflow-y-auto rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/92 to-slate-950/98 backdrop-blur-2xl border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_15px_35px_rgba(0,0,0,0.8)] p-1.5 z-50 space-y-1 scrollbar-thin scrollbar-thumb-white/20"
+            className="absolute left-0 sm:left-1/2 sm:-translate-x-1/2 w-full min-w-[240px] sm:w-[320px] max-h-[320px] sm:max-h-[380px] overflow-y-auto rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-900/92 to-slate-950/98 backdrop-blur-2xl border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_15px_35px_rgba(0,0,0,0.8)] p-1.5 z-50 space-y-1 scrollbar-thin scrollbar-thumb-white/20"
             role="listbox"
           >
             {ALL_ARCHETYPES.map((archetype) => {

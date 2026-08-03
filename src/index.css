@@ -15,7 +15,7 @@ body {
 
 @font-face {
   font-family: 'GeistPixelSquare';
-  src: url('/fonts/GeistPixel-Square.woff2') format('woff2');
+  src: url('./assets/fonts/GeistPixel-Square.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -23,7 +23,7 @@ body {
 
 @font-face {
   font-family: 'GeistPixelTriangle';
-  src: url('/fonts/GeistPixel-Triangle.woff2') format('woff2');
+  src: url('./assets/fonts/GeistPixel-Triangle.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -31,7 +31,7 @@ body {
 
 @font-face {
   font-family: 'GeistPixelGrid';
-  src: url('/fonts/GeistPixel-Grid.woff2') format('woff2');
+  src: url('./assets/fonts/GeistPixel-Grid.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -39,7 +39,7 @@ body {
 
 @font-face {
   font-family: 'GeistPixelCircle';
-  src: url('/fonts/GeistPixel-Circle.woff2') format('woff2');
+  src: url('./assets/fonts/GeistPixel-Circle.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -47,7 +47,7 @@ body {
 
 @font-face {
   font-family: 'GeistPixelLine';
-  src: url('/fonts/GeistPixel-Line.woff2') format('woff2');
+  src: url('./assets/fonts/GeistPixel-Line.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
