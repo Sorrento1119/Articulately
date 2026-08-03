@@ -20,9 +20,12 @@ export const FullScreenTimer: React.FC<FullScreenTimerProps> = ({
   speakDurationSeconds,
   onClose,
 }) => {
-  const [stage, setStage] = useState<Stage>('prep');
-  const [msLeft, setMsLeft] = useState<number>(prepDurationSeconds * 1000);
-  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const initialStage: Stage = prepDurationSeconds > 0 ? 'prep' : 'speak';
+  const initialMs = (initialStage === 'prep' ? prepDurationSeconds : speakDurationSeconds) * 1000;
+
+  const [stage, setStage] = useState<Stage>(initialStage);
+  const [msLeft, setMsLeft] = useState<number>(initialMs);
+  const [isRunning, setIsRunning] = useState<boolean>(prepDurationSeconds > 0);
   const [copied, setCopied] = useState<boolean>(false);
 
   // Keep track of original total milliseconds for progress calculation
